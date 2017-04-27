@@ -33,7 +33,7 @@ var _ = require('underscore'),
     with the filename as the extension name.
    */
   exports.getClientSql = function (extPath, callback) {
-    var extName,
+    var extName = path.basename(extPath).replace(/\/$/, ""), // the name of the extension
       constructQuery = function (contents, extension, version, language) {
         if (!contents || contents === "undefined") {
           return "";
@@ -49,7 +49,7 @@ var _ = require('underscore'),
       callback(null, "");
       return;
 
-    } else if (extPath.indexOf("extensions") < 0 && extPath.indexOf("node_modules") < 0) {
+    } else if (extPath.indexOf("extension") < 0 && extPath.indexOf("node_modules") < 0) {
       // this is the core app, which has a slightly different process.
       fs.readFile(path.join(__dirname, "build/core.js"), "utf8", function (err, jsCode) {
         if (err) {
@@ -74,7 +74,13 @@ var _ = require('underscore'),
       });
 
     } else {
-      extName = path.basename(extPath).replace(/\/$/, ""); // the name of the extension
+      // If `extensions` is in the path, it's for a group of exentions. e.g.
+      // `private-extensions` or `xtuple-extensions`. If not, it's a single
+      // e.g. `xdruple-extension`. Set `extName` accordingly.
+      if (extPath.indexOf("extensions") < 0 && extPath.indexOf("extension") >= 0) {
+        extName = extName.replace("-extension", "");
+      }
+
       fs.readFile(path.join(__dirname, "build", extName + ".js"), "utf8", function (err, jsCode) {
         if (err) {
           if (err.code === 'ENOENT') {
@@ -103,7 +109,16 @@ var _ = require('underscore'),
           }
           if (!version) {
             // if the extensions don't declare their version, default to the package version
-            version = require(path.resolve(__dirname, "../../package.json")).version;
+
+            // If `extensions` is in the path, it's for a group of exentions. e.g.
+            // `private-extensions` or `xtuple-extensions`. If not, it's a single
+            // e.g. `xdruple-extension`. Set `version` accordingly.
+            if (extPath.indexOf("extensions") < 0 && extPath.indexOf("extension") >= 0) {
+              version = require(path.resolve(extPath, "package.json")).version;
+            } else {
+              version = require(path.resolve(__dirname, "../../package.json")).version;
+            }
+
           }
           callback(null, constructQuery(cssCode, extName, version, "css") +
             constructQuery(jsCode, extName, version, "js"));
@@ -117,9 +132,18 @@ var _ = require('underscore'),
    */
   var buildExtension = function (extPath, callback) {
     // regex: remove trailing slash
-    var extName = path.basename(extPath).replace(/\/$/, ""), // the name of the extension
-      cssFilename = extName + ".css",
-      jsFilename = extName + ".js";
+    var isNodeModule = extPath.indexOf("node_modules") >= 0;
+    var extName = path.basename(extPath).replace(/\/$/, ""); // the name of the extension
+
+    // If `extensions` is in the path, it's for a group of exentions. e.g.
+    // `private-extensions` or `xtuple-extensions`. If not, it's a single
+    // e.g. `xdruple-extension`. Set `extName` accordingly.
+    if (extPath.indexOf("extensions") < 0 && extPath.indexOf("extension") >= 0) {
+      extName = extName.replace("-extension", ""); // the name of the extension
+    }
+
+    var cssFilename = extName + ".css";
+    var jsFilename = extName + ".js";
 
     // create the package file for enyo to use
     var rootPackageContents = 'enyo.depends("' + extPath + '/client");';
@@ -128,8 +152,19 @@ var _ = require('underscore'),
         callback(err);
         return;
       }
+
       // run the enyo deployment method asyncronously
-      var rootDir = path.join(extPath, extPath.indexOf("node_modules") >= 0 ? "../../enyo-client/extensions/" : "../..");
+
+      var rootDir = "";
+      // If `extensions` is in the path, it's for a group of exentions. e.g.
+      // `private-extensions` or `xtuple-extensions`. If not, it's a single
+      // e.g. `xdruple-extension`. Set `rootDir` accordingly.
+      if (extPath.indexOf("extensions") < 0 && extPath.indexOf("extension") >= 0 && !isNodeModule) {
+        rootDir = extPath;
+      } else {
+        rootDir = path.join(extPath, isNodeModule ? "../../enyo-client/extensions/" : "../..");
+      }
+
       // we run the command from /scripts/lib, so that is where build directories and other
       // temp files are going to go.
       console.log("building " + extName);
@@ -237,13 +272,22 @@ var _ = require('underscore'),
       return;
     }
 
-    if (extPath.indexOf("extensions") < 0 && !isNodeModule) {
+    if (extPath.indexOf("extension") < 0 && !isNodeModule) {
       // this is the core app, which has a different deploy process.
       buildCore(callback);
       return;
     }
 
-    var enyoDir = path.join(extPath, isNodeModule ? "../../enyo-client/extensions/enyo" : "../../enyo");
+    var enyoDir = "";
+    // If `extensions` is in the path, it's for a group of exentions. e.g.
+    // `private-extensions` or `xtuple-extensions`. If not, it's a single
+    // e.g. `xdruple-extension`. Set `enyoDir` accordingly.
+    if (extPath.indexOf("extensions") < 0 && extPath.indexOf("extension") >= 0 && !isNodeModule) {
+      enyoDir = path.join(extPath, "enyo");
+    } else {
+      enyoDir = path.join(extPath, isNodeModule ? "../../enyo-client/extensions/enyo" : "../../enyo");
+    }
+
     fs.exists(path.join(extPath, "client"), function (exists) {
       if (!exists) {
         console.log(extPath + " has no client code. Not trying to build it.");

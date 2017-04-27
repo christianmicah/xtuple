@@ -146,9 +146,6 @@ BEGIN
 
   END LOOP;
 
-  DELETE FROM itemlocdist
-  WHERE (itemlocdist_series=pItemlocSeries);
-
   RETURN _distCounter;
 
 END;

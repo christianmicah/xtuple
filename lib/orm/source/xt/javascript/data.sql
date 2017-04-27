@@ -1435,6 +1435,9 @@ select xt.install_js('XT','Data','xtuple', $$
               parameters: []
             }
           }
+          if (!payload.query.parameters) {
+            payload.query.parameters = [];
+          }
 
           /*
            * To improve Shared User Access performance, we set this flag here and
@@ -2446,7 +2449,7 @@ select xt.install_js('XT','Data','xtuple', $$
           (!orderBy || !orderBy.length) &&
           !orderByClause.length) {
 
-        var pkeyColumn = XT.Orm.primaryKey(this.orm, true);
+        var pkeyColumn = XT.Orm.primaryKey(this.orm);
         orderByClause = XT.format('ORDER BY\n  %1$I ', [pkeyColumn]);
       }
 

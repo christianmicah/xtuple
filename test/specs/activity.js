@@ -49,7 +49,7 @@ before:true, exports:true, it:true, describe:true, XG:true */
       this.timeout(40000);
       var model = actList.value.models[0],
         assignedTo = model.get("assignedTo") ? model.getValue("assignedTo.username") : null,
-        newAssignedTo = assignedTo === "postgres" ? "admin" : "postgres",
+        newAssignedTo = assignedTo === "admin" ? "postgres" : "admin",
         popup;
 
       // Select the first model from the list, call the reassignUser function

@@ -53,14 +53,7 @@ var _      = require('underscore'),
         done();
       });
     });
-/*
-    after(function () {
-      var sql = "UPDATE itemsite SET itemsite_freeze=FALSE WHERE itemsite_id=$1;",
-      cred = _.extend({}, adminCred, { parameters: [ itemsitefail ] });
 
-      datasource.query(sql, cred);
-    });
-*/
     it("should run without error", function (done) {
       var sql = "SELECT balanceItemsite($1) AS result;",
           cred = _.extend({}, adminCred,
@@ -69,6 +62,16 @@ var _      = require('underscore'),
       datasource.query(sql, cred, function (err, res) {
         assert.isNull(err);
         assert.equal(res.rows[0].result, 1);
+        done();
+      });
+    });
+
+    it("should unfreeze the itemsite", function (done) {
+      var sql = "UPDATE itemsite SET itemsite_freeze=FALSE WHERE itemsite_id=$1;",
+        cred = _.extend({}, adminCred, { parameters: [ itemsitefail ] });
+
+      datasource.query(sql, cred, function (err, res) {
+        assert.isNull(err);
         done();
       });
     });

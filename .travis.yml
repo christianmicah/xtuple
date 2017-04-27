@@ -4,11 +4,13 @@ dist:     trusty
 node_js:
   - "0.10"
 addons:
-  postgresql: 9.4
+  postgresql: 9.3
 
 install:
+  - git merge origin/$TRAVIS_BRANCH
   - pg_lsclusters
-  - bash scripts/install_xtuple.sh -ipn
+  - bash scripts/install_xtuple.sh -ipn -d 9.3
+  - scripts/build_app.js
 
 before_script:
   - cd node-datasource

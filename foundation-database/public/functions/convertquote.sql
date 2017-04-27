@@ -1,6 +1,6 @@
 
 CREATE OR REPLACE FUNCTION convertQuote(pQuheadid INTEGER) RETURNS INTEGER AS $$
--- Copyright (c) 1999-2014 by OpenMFG LLC, d/b/a xTuple. 
+-- Copyright (c) 1999-2016 by OpenMFG LLC, d/b/a xTuple.
 -- See www.xtuple.com/CPAL for the full text of the software license.
 DECLARE
   _qunumber TEXT;
@@ -177,6 +177,7 @@ BEGIN
         (charass_target_type, charass_target_id, charass_char_id, charass_value, charass_default, charass_price)
   SELECT 'SO', _soheadid, charass_char_id, charass_value, charass_default, charass_price
     FROM charass
+    JOIN charuse ON (charuse_char_id=charass_char_id AND charuse_target_type='SO')
    WHERE ((charass_target_type='QU')
      AND  (charass_target_id=pQuheadid));
 
@@ -211,7 +212,7 @@ BEGIN
       coitem_qty_uom_id, coitem_qty_invuomratio,
       coitem_price_uom_id, coitem_price_invuomratio,
       coitem_unitcost, coitem_prcost,
-      coitem_custpn, coitem_memo, coitem_taxtype_id, coitem_order_id )
+      coitem_custpn, coitem_memo, coitem_taxtype_id, coitem_order_id, coitem_dropship )
     VALUES
     ( _soitemid, _soheadid, _r.quitem_linenumber, _r.quitem_itemsite_id,
       'O', _r.quitem_scheddate, _r.quitem_promdate,
@@ -220,7 +221,7 @@ BEGIN
       _r.quitem_qty_uom_id, _r.quitem_qty_invuomratio,
       _r.quitem_price_uom_id, _r.quitem_price_invuomratio,
       _r.quitem_unitcost, _r.quitem_prcost,
-      _r.quitem_custpn, _r.quitem_memo, _r.quitem_taxtype_id, -1 );
+      _r.quitem_custpn, _r.quitem_memo, _r.quitem_taxtype_id, -1, _r.quitem_dropship );
 
     IF (fetchMetricBool('enablextcommissionission')) THEN
       PERFORM xtcommission.getSalesReps(quhead_cust_id, quhead_shipto_id,
@@ -236,6 +237,7 @@ BEGIN
           (charass_target_type, charass_target_id, charass_char_id, charass_value, charass_default, charass_price)
     SELECT 'SI', _soitemid, charass_char_id, charass_value, charass_default, charass_price
       FROM charass
+      JOIN charuse ON (charuse_char_id=charass_char_id AND charuse_target_type='SI')
      WHERE ((charass_target_type='QI')
        AND  (charass_target_id=_r.quitem_id));
 

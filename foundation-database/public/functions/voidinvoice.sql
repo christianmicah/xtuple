@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION voidInvoice(INTEGER) RETURNS INTEGER AS $$
--- Copyright (c) 1999-2016 by OpenMFG LLC, d/b/a xTuple.
+-- Copyright (c) 1999-2017 by OpenMFG LLC, d/b/a xTuple.
 -- See www.xtuple.com/CPAL for the full text of the software license.
 DECLARE
   pInvcheadid ALIAS FOR $1;
@@ -153,7 +153,7 @@ BEGIN
   END LOOP;
 
 --  March through the Misc. Invcitems
-  FOR _r IN SELECT salescat_sales_accnt_id, extprice
+  FOR _r IN SELECT salescat_sales_accnt_id, invcitem_rev_accnt_id, extprice
             FROM invoiceitem JOIN salescat ON (salescat_id = invcitem_salescat_id)
             WHERE ( (invcitem_item_id = -1)
               AND   (invcitem_invchead_id=_p.invchead_id) ) LOOP

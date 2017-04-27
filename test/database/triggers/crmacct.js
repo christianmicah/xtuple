@@ -8,23 +8,52 @@ var _       = require('underscore'),
 
     var dblib      = require('../dblib.js'),
         adminCred  = dblib.adminCred,
-        casualCred = dblib.generateCreds('crmaccttest'),
+        casualUser = 'crmaccttest',
+        casualCred = dblib.generateCreds(casualUser),
         crmacctid  = -1,
-        datasource = dblib.datasource;
+        datasource = dblib.datasource,
+        emailAcct,
+        emailUser  = "TestUser",
+        emailAddr  = emailUser + "@xTuple.com";
 
-//  describe('setup', function () {
-      it('should create a test user', function (done) {
+    function cleanup() {
+      dblib.deleteUser(casualUser);
+      dblib.deleteUser(emailUser.toLowerCase());
+      dblib.deleteUser(emailAddr.toLowerCase());
+
+      [ 'TESTY', emailAddr.toUpperCase(), emailUser.toUpperCase() ].forEach(function (acct) {
+          [ "delete from vendinfo where vend_number    = $1;",
+            "delete from custinfo where cust_number    = $1;",
+            "delete from crmacct  where crmacct_number = $1;"
+          ].forEach(function (sql) {
+            var cred = _.extend({}, adminCred, { parameters: [ acct ] });
+            datasource.query(sql, cred, function (err, res) {
+              assert.isNull(err);
+              assert.isNotNull(res);
+  //          done();
+            });
+          });
+      });
+    }
+
+    before(cleanup);
+    after(cleanup);
+
+      it('needs a test user', function (done) {
         dblib.createUser(casualCred, done);
       });
 
-      it('should grant MaintainCustomerMasters', function (done) {
+      it('needs test user to have MaintainCustomerMasters', function (done) {
         dblib.grantPrivToUser(casualCred, 'MaintainCustomerMasters', done);
       });
 
-      it('should grant MaintainAllCRMAccounts', function (done) {
+      it('needs test user to have MaintainAllCRMAccounts', function (done) {
         dblib.grantPrivToUser(casualCred, 'MaintainAllCRMAccounts', done);
       });
-//  });
+
+    it('needs a test xTC user', function (done) {
+      dblib.createUser(dblib.generateCreds(emailAddr.toLowerCase()), done);
+    });
 
     it('unprivileged user should create a Customer', function (done) {
       var sql = "insert into custinfo ("                                +
@@ -114,6 +143,7 @@ var _       = require('underscore'),
           options = _.extend({}, casualCred, { parameters: [ crmacctid ]});
       datasource.query(sql, options, function (err, res) {
         assert.isNotNull(err, 'expect a Vendor error changing the CRM Account now');
+        assert.isUndefined(res);
         done();
       });
     });
@@ -154,22 +184,48 @@ var _       = require('underscore'),
       });
     });
 
-    it("should clean up the crm account", function (done) {
-      var sql = [ "delete from vendinfo where vend_number    = 'TESTY';",
-                  "delete from custinfo where cust_number    = 'TESTY';",
-                  "delete from crmacct  where crmacct_number = 'TESTY';"
-                ];
-      datasource.query(sql.join(" "), adminCred, function (err, res) {
-        assert.isNull(err);
+    it("should allow creating a CRM Account for a User", function (done) {
+      var sql = "insert into crmacct ("                                +
+                "  crmacct_number, crmacct_name, crmacct_usr_username" +
+                ") values ("                                           +
+                "  $1, $1, $1"                                         +
+                ") returning *;",
+          options = _.extend({}, adminCred, { parameters: [ emailAddr ]});
+      datasource.query(sql, options, function (err, res) {
+        assert.equal(res.rowCount, 1);
+        emailAcct = res.rows[0];
+        assert.equal(emailAcct.crmacct_number,       emailAddr.toUpperCase());
+        assert.equal(emailAcct.crmacct_usr_username, emailAddr.toLowerCase());
         done();
       });
     });
 
-    /*
-    after(function () {
-      dblib.deleteUser(casualCred);
+    it("should allow changing a User crmacct's number", function (done) {
+      var sql = "update crmacct"                +
+                "   set crmacct_number = $1"    +
+                " where crmacct_id = $2"        +
+                " returning *;",
+          options = _.extend({}, adminCred,
+                             { parameters: [ emailUser, emailAcct.crmacct_id ]});
+      datasource.query(sql, options, function (err, res) {
+        assert.equal(res.rowCount, 1, 'one crmaccount should change');
+        assert.equal(res.rows[0].crmacct_number,       emailUser.toUpperCase());
+        assert.equal(res.rows[0].crmacct_usr_username, emailUser.toLowerCase());
+        assert.equal(res.rows[0].crmacct_name,         emailAddr);
+        done();
+      });
     });
-    */
+
+    it("should verify the user changed", function (done) {
+      var sql = "select usr_username"   +
+                "  from usr"            +
+                " where usr_username = lower($1);",
+          options = _.extend({}, adminCred, { parameters: [ emailUser ]});
+      datasource.query(sql, options, function (err, res) {
+        assert.equal(res.rowCount, 1);
+        done();
+      });
+    });
 
   });
 })();

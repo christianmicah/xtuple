@@ -127,7 +127,9 @@
         du = function (done) {
           var sql = 'drop user "' + username + '";';
           datasource.query(sql, adminCred, function (err, res) {
-            assert.isNull(err, 'should drop ' + username);
+            if (err) {
+              assert.match(err, new RegExp("role.*does not exist"), 'should drop ' + username);
+            }
             if (_.isFunction(done)) { done(); }
           });
         };

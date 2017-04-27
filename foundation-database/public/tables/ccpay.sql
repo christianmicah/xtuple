@@ -4,5 +4,5 @@ select xt.add_column('ccpay','ccpay_card_pan_trunc', 'text', null, 'public', 'Ex
 --select xt.add_column('ccpay','ccpay_card_type', 'text', null, 'public', 'External Pre-Auth card type: V=Visa, M=MasterCard, A=American Express, D=Discover, P=Paypal.');
 select xt.add_column('ccpay','ccpay_card_type', 'text', null, 'public', 'External Pre-Auth card type: V=Visa, M=MasterCard, A=American Express, D=Discover.');
 
-ALTER TABLE ONLY ccpay ADD CONSTRAINT ccpay_ccpay_ccard_id_fkey FOREIGN KEY (ccpay_ccard_id) REFERENCES ccard(ccard_id);
+select xt.add_constraint('ccpay','ccpay_ccpay_ccard_id_fkey', 'foreign key (ccpay_ccard_id) references ccard(ccard_id)', 'public');
 

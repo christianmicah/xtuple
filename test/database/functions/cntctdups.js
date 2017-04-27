@@ -15,18 +15,19 @@ var _      = require("underscore"),
 
     _.each(ignoreBlanks, function (b) {
       _.each(indentedDups, function (d) {
-        var cred = _.extend({}, adminCred, { parameters: [ "Mr", b, d ] });
+        var cred = _.extend({}, adminCred, { parameters: [ "[aeiou]", b, d ] });
         it("should not error for " + JSON.stringify(cred.parameters), function (done) {
           var sql = "select * from cntctDups($1, true," +
                     "  true, true, true, true, true,"   +
                     "  $2, $3,"                  + // IgnoreBlanks, IndentedDups
                     "  true, true, true, true, true, true, true);";
-          datasource.query(sql, cred, function (err /*, res */) {
+          datasource.query(sql, cred, function (err, res) {
             assert.isNull(err);
+            console.log(JSON.stringify(res));
+            assert.operator(res.rowCount, d ? "===" : ">", 0);
             done();
           });
         });
-        it.skip("what are we looking for in the result?");
       });
     });
 

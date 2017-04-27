@@ -4622,7 +4622,7 @@ INSERT INTO metric (metric_id, metric_name, metric_value, metric_module) VALUES 
 INSERT INTO metric (metric_id, metric_name, metric_value, metric_module) VALUES (312, 'Long30Markups', 'f', NULL);
 INSERT INTO metric (metric_id, metric_name, metric_value, metric_module) VALUES (313, 'SOManualReservations', 'f', NULL);
 INSERT INTO metric (metric_id, metric_name, metric_value, metric_module) VALUES (91, 'YearEndEquityAccount', '84', NULL);
-INSERT INTO metric (metric_id, metric_name, metric_value, metric_module) VALUES (314, 'RegistrationKey', 'JEEJT-CTWEJ-ZGY8Z-MXJZK-ECVCB', NULL);
+INSERT INTO metric (metric_id, metric_name, metric_value, metric_module) VALUES (314, 'RegistrationKey', '0EEKA-CTWEJ-ZGY8Z-MXJZK-ECVCB', NULL);
 
 
 ALTER TABLE metric ENABLE TRIGGER ALL;
@@ -5916,3 +5916,39 @@ do $$
 $$ language plpgsql;
 ALTER TABLE usrpriv ENABLE TRIGGER ALL;
 ALTER TABLE grppriv ENABLE TRIGGER ALL;
+
+
+DO $$
+-- Insert XTUPLE as a Vendor in reference databases complete with contact address and numbers
+DECLARE
+  _addr  INTEGER;
+  _cntct INTEGER;
+  _vend  INTEGER;
+  _sql   TEXT;
+BEGIN
+
+  _vend := (SELECT vend_id FROM vendinfo WHERE vend_number = 'XTUPLE');
+  IF FOUND THEN 
+    RETURN;
+  END IF;
+
+  _addr := (SELECT saveAddr(-1,NULL,'119 West York Street','','','Norfolk','VA','23510','United States',TRUE,NULL,'CHECK'));
+
+  _cntct := (SELECT NEXTVAL('cntct_cntct_id_seq'));
+
+  PERFORM saveCntct(_cntct, fetchNextNumber('ContactNumber'),NULL, _addr,'','xTuple','','Sales','','',TRUE,'+1-757-461-3022','','','','www.xtuple.com','','','CHECK','admin');
+
+  _vend := (SELECT NEXTVAL('vend_vend_id_seq'));
+
+  RAISE NOTICE 'Creating XTUPLE Vendor with id: %, contact id: %, address id: %', _vend, _cntct, _addr;
+
+  _sql = 'INSERT INTO vendinfo ( vend_id, vend_number, vend_accntnum,  vend_active, vend_vendtype_id, vend_name,  vend_cntct1_id, vend_cntct2_id, vend_addr_id,  vend_po, 
+                       vend_restrictpurch,  vend_1099, vend_qualified,  vend_comments, vend_pocomments,  vend_fobsource, vend_fob,  vend_terms_id, vend_shipvia, 
+                       vend_curr_id,  vend_taxzone_id, vend_match, vend_ach_enabled,  vend_ach_routingnumber, vend_ach_accntnumber,  vend_ach_use_vendinfo,  vend_ach_accnttype, 
+                       vend_ach_indiv_number,  vend_ach_indiv_name,  vend_accnt_id, vend_expcat_id, vend_tax_id) 
+          VALUES ( %s ,  ''XTUPLE'' ,  '''' ,  TRUE ,  18 ,  ''xTuple ERP'' ,  %s ,  NULL ,  %s ,  FALSE ,  FALSE ,  FALSE ,  FALSE ,  
+                '''' ,  '''' ,  ''W'' ,  '''' ,  43 ,  '''' ,  1 ,   NULL ,  FALSE ,  FALSE ,  '''',  '''',  FALSE ,  ''K'' ,  '''' ,  '''' ,-1,-1 ,-1);';
+  EXECUTE format(_sql, _vend, _cntct, _addr);
+
+END;
+$$ language plpgsql;

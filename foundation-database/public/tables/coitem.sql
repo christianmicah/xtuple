@@ -1,5 +1,6 @@
 select xt.add_column('coitem', 'coitem_qtyreserved_uom_id', 'INTEGER', NULL, 'public');
 select xt.add_column('coitem', 'coitem_listprice', 'NUMERIC(16,4)', NULL, 'public');
+select xt.add_column('coitem', 'coitem_dropship', 'BOOLEAN', 'DEFAULT FALSE', 'public');
 
 select xt.add_constraint('coitem','coitem_coitem_qtyreserved_uom_id_fkey', 'foreign key (coitem_qtyreserved_uom_id) references uom(uom_id)', 'public');
 

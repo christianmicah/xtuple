@@ -162,8 +162,8 @@ BEGIN
        FROM accnt d, accnt c
        WHERE ((d.accnt_id=pDebitid)
         AND (c.accnt_id=pCreditid))) THEN
-      RAISE EXCEPTION 'G/L Transaction can not be posted because accounts % and % reference two different companies.',
-        formatGlaccount(pDebitid), formatGlaccount(pCreditid);
+      RAISE EXCEPTION 'G/L Transaction can not be posted because accounts % and % reference two different companies. [xtuple: insertGLTransaction, -1, %, %]',
+        formatGlaccount(pDebitid), formatGlaccount(pCreditid), formatGlaccount(pDebitid), formatGlaccount(pCreditid);
     END IF;
   END IF;
 
@@ -188,8 +188,7 @@ BEGIN
       FROM accnt LEFT OUTER JOIN
            period ON (pDistDate BETWEEN period_start AND period_end)
       WHERE (accnt_id IN (_creditid, _debitid))) THEN
-    RAISE EXCEPTION 'Cannot post to closed period (%).', pDistDate;
-    RETURN -4;  -- remove raise exception when all callers check return code
+    RAISE EXCEPTION 'Cannot post to closed period (%). [xtuple: insertGLTransaction, -4, %]', pDistDate, pDistDate;
   END IF;
 
 -- refuse to accept postings into frozen periods without proper priv
@@ -198,15 +197,14 @@ BEGIN
       FROM accnt LEFT OUTER JOIN
            period ON (pDistDate BETWEEN period_start AND period_end)
       WHERE (accnt_id IN (_creditid, _debitid))) THEN
-    RAISE EXCEPTION 'Cannot post to frozen period (%).', pDistDate;
-    RETURN -4;  -- remove raise exception when all callers check return code
+    RAISE EXCEPTION 'Cannot post to frozen period (%). [xtuple: insertGLTransaction, -5, %]', pDistDate, pDistDate;
   END IF;
 
 -- refuse to accept postings into nonexistent periods
   IF NOT EXISTS(SELECT period_id
                 FROM period
                 WHERE (pDistDate BETWEEN period_start AND period_end)) THEN
-    RAISE EXCEPTION 'Cannot post to nonexistent period (%).', pDistDate;
+    RAISE EXCEPTION 'Cannot post to nonexistent period (%). [xtuple: insertGLTransaction, -2, %]', pDistDate, pDistDate;
   END IF;
 
 --  Grab a sequence for the pair

@@ -326,7 +326,7 @@ regexp:true, undef:true, strict:true, trailing:true, white:true */
           return;
         }
 
-        composeExtensionSql(scriptSql, packageJson || manifest, options, manifestCallback);
+        composeExtensionSql(scriptSql, manifest, options, manifestCallback);
       });
       //
       // End script installation code

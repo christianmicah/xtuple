@@ -90,8 +90,11 @@ noarg:true, regexp:true, undef:true, strict:true, trailing:true, white:true */
 
             return valid;
           },
-          validateValue = function (value) {
-            // The value should be a string, boolean or numeric.
+          validateValue = function (value) {            
+            // The value should be an array, string, boolean or numeric.
+            if (Array.isArray(value)) {
+              return value;
+            }
             switch (typeof value) {
               case "boolean":
               case "number":

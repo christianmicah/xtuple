@@ -58,10 +58,19 @@ if (typeof XT === 'undefined') {
     } else {
       // return the extension strings if they exist
       filename = path.join(extension, "client/en/strings.js");
+
       fs.exists(filename, function (exists) {
         if (exists) {
+          var extName = path.basename(extension).replace(/\/$/, "");
+          // If `extensions` is in the path, it's for a group of exentions. e.g.
+          // `private-extensions` or `xtuple-extensions`. If not, it's a single
+          // e.g. `xdruple-extension`. Set `filename` accordingly.
+          if (extension.indexOf("extensions") < 0 && extension.indexOf("extension") >= 0) {
+            extName = extName.replace("-extension", "");
+          }
+
           callback(null, createQuery(require(filename).language.strings,
-            path.basename(extension).replace("/", "")));
+            extName));
         } else {
           // no problem. Maybe there is just no strings file
           callback(null, '');
